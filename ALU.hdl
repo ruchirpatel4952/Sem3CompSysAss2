@@ -38,22 +38,29 @@ CHIP ALU {
 
     OUT 
         out[16], // 16-bit output
+        zr,
+        ng;
 
     PARTS:
-    Mux16(a=x, b[0..15]=false, sel=zx, out=xZeroed);
+        Mux16(a=x,b[0..15]=false,sel=zx,out=zdx); 
+        Not16(in=zdx,out=notx);              
+        Mux16(a=zdx,b=notx,sel=nx,out=ndx); 
 
-    Not16(in=xZeroed, out=xNegated);
-    Mux16(a=xZeroed, b=xNegated, sel=nx, out=xProcessed);
-    
-    Mux16(a=y, b[0..15]=false, sel=zy, out=yZeroed);
-    
-    Not16(in=yZeroed, out=yNegated);
-    Mux16(a=yZeroed, b=yNegated, sel=ny, out=yProcessed);
-    
-    Add16(a=xProcessed, b=yProcessed, out=sum);
-    And16(a=xProcessed, b=yProcessed, out=andResult);
-    Mux16(a=andResult, b=sum, sel=f, out=funcResult);
-    
-    Not16(in=funcResult, out=outNegated);
-    Mux16(a=funcResult, b=outNegated, sel=no, out=out);
+        Mux16(a=y,b[0..15]=false,sel=zy,out=zdy);
+        Not16(in=zdy,out=noty);
+        Mux16(a=zdy,b=noty,sel=ny,out=ndy);
+
+        Add16(a=ndx,b=ndy,out=xplusy); 
+        And16(a=ndx,b=ndy,out=xandy);  
+        Mux16(a=xandy,b=xplusy,sel=f,out=fxy);  
+
+        Not16(in=fxy,out=nfxy);    
+        Mux16(a=fxy,b=nfxy,sel=no,out=oo);  
+
+
+        Or16Way(in=oo,out=o);  
+        Not(in=o,out=zr);
+        And16(a[0..15]=true,b=oo,out[15]=ng,out[0..14]=drop); //for ng
+
+        Or16(a=oo,b[0..15]=false,out=out);
 }
