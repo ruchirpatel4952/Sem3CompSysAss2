@@ -1,0 +1,19 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/02/Add16.hdl
+
+/**
+ * Adds two 16-bit values.
+ * If an overflow occurs (The most significant carry bit is 1), over is set to 1.
+ */
+
+CHIP Add16 {
+    IN a[16], b[16];
+    OUT out[16], over;
+
+    PARTS:
+    FullAdder(a=a[1], b=b[1], c=c1, sum=out[1], carry=c2);
+    FullAdder(a=a[2], b=b[2], c=c2, sum=out[2], carry=c3);
+    FullAdder(a=a[15], b=b[15], c=c15, sum=out[15], carry=over);
+}
