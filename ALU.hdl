@@ -44,21 +44,16 @@ CHIP ALU {
     PARTS:
     Mux16(a=x, b=false, sel=zx, out=xZeroed);
     Mux16(a=y, b=false, sel=zy, out=yZeroed);
-
+    
     Not16(in=xZeroed, out=notX);
-    Mux16(a=xZeroed, b=notX, sel=nx, out=xNegated);
+    Mux16(a=xZeroed, b=notX, sel=nx, out=xPrepared);
     Not16(in=yZeroed, out=notY);
-    Mux16(a=yZeroed, b=notY, sel=ny, out=yNegated);
-
-    Add16(a=xNegated, b=yNegated, out=addResult);
-    And16(a=xNegated, b=yNegated, out=andResult);
-    Mux16(a=andResult, b=addResult, sel=f, out=operationResult);
-
-    Not16(in=operationResult, out=notOperationResult);
-    Mux16(a=operationResult, b=notOperationResult, sel=no, out=out);
-
-    Or16Way(in=out, out=orResult);
-    Not(in=orResult, out=zr);
-    Or(a=out[15], b=false, out=ng);
-
+    Mux16(a=yZeroed, b=notY, sel=ny, out=yPrepared);
+    
+    Add16(a=xPrepared, b=yPrepared, out=addResult);
+    And16(a=xPrepared, b=yPrepared, out=andResult);
+    Mux16(a=andResult, b=addResult, sel=f, out=fResult);
+    
+    Not16(in=fResult, out=notResult);
+    Mux16(a=fResult, b=notResult, sel=no, out=out);
 }
