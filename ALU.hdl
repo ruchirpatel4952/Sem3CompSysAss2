@@ -38,22 +38,22 @@ CHIP ALU {
 
     OUT 
         out[16], // 16-bit output
-        zr, // 1 if (out == 0), 0 otherwise
-        ng; // 1 if (out < 0),  0 otherwise
 
     PARTS:
-    Mux16(a=x, b=false, sel=zx, out=xZeroed);
-    Mux16(a=y, b=false, sel=zy, out=yZeroed);
+    Mux16(a=x, b[0..15]=false, sel=zx, out=xZeroed);
+
+    Not16(in=xZeroed, out=xNegated);
+    Mux16(a=xZeroed, b=xNegated, sel=nx, out=xProcessed);
     
-    Not16(in=xZeroed, out=notX);
-    Mux16(a=xZeroed, b=notX, sel=nx, out=xPrepared);
-    Not16(in=yZeroed, out=notY);
-    Mux16(a=yZeroed, b=notY, sel=ny, out=yPrepared);
+    Mux16(a=y, b[0..15]=false, sel=zy, out=yZeroed);
     
-    Add16(a=xPrepared, b=yPrepared, out=addResult);
-    And16(a=xPrepared, b=yPrepared, out=andResult);
-    Mux16(a=andResult, b=addResult, sel=f, out=fResult);
+    Not16(in=yZeroed, out=yNegated);
+    Mux16(a=yZeroed, b=yNegated, sel=ny, out=yProcessed);
     
-    Not16(in=fResult, out=notResult);
-    Mux16(a=fResult, b=notResult, sel=no, out=out);
+    Add16(a=xProcessed, b=yProcessed, out=sum);
+    And16(a=xProcessed, b=yProcessed, out=andResult);
+    Mux16(a=andResult, b=sum, sel=f, out=funcResult);
+    
+    Not16(in=funcResult, out=outNegated);
+    Mux16(a=funcResult, b=outNegated, sel=no, out=out);
 }
