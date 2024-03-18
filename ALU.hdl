@@ -64,30 +64,26 @@ CHIP ALU {
 
         // Or16(a=oo,b[0..15]=false,out=out);
         // x zero / negate
-      Mux16(a=x, sel=zx, out=x1);
-      Not16(in=x1, out=negatedX);
-      Mux16(a=x1, b=negatedX, sel=nx, out=x2);
+      //ZX and ZY flag handling
+        Mux16(a=x, b=[0..15]=false, sel=zx, out=xMux);
+        Mux16(a=y, b=[0..15]=false, sel=zy, out=yMux);
+    //NX and NY flag handling 
+        Not16(in=xMux, out=NxNux);
+        Mux16(a=xMux, b=NxNux, sel=nx, out=readyX);
+        Not16(in=yMux, out=NyNux);
+        Mux16(a=yMux, b=NyNux, sel=ny, out=readyY);
+    // f control bit handling
+        Or16(a=readyX, b=readyY, out=ReadyXorReadyY);
+        Add16(a=readyX, b=readyY, out=ReadyXaddReadyY);
 
-      // y zero / negate
-      Mux16(a=y, sel=zy, out=y1);
-      Not16(in=y1, out=negatedY);
-      Mux16(a=y1, b=negatedY, sel=ny, out=y2);
-
-      // x + y OR x & y
-      Add16(a=x2, b=y2, out=added);
-      And16(a=x2, b=y2, out=xyAnd);
-      Mux16(a=xyAnd, b=added, sel=f, out=result);
-
-      // negate the output?
-      Not16(in=result, out=negatedResult);
-      Mux16(a=result, b=negatedResult, sel=no, out=out, out[15]=firstOut, out[0..7]=finalLeft, out[8..15]=finalRight);
-
-      // output == 0 (zr)
-      Or8Way(in=finalLeft, out=zrl);
-      Or8Way(in=finalRight, out=zrr);
-      Or(a=zrl, b=zrr, out=nzr);
-      Not(in=nzr, out=zr);
-
-      // output < 0 (ng)
-      And(a=firstOut, b=true, out=ng);
+        Mux16(a=ReadyXorReadyY, b=ReadyXaddReadyY, sel=f, out=fOut);
+    // no control bit flager handling, out, ng flag 
+        Not(in=fOut, out=NfOut);
+        Mux16(a=fOut, b=NfOut, sel=no, out=out, out[15]=ng, out[0..7]=zrLow, out[0..15]=zrHigh);
+     
+    // ZR flag handling 
+	Or8Way(in=zrLow, out=or1out);
+	Or8Way(in=zrHigh, out=or2out);
+	Or(a=or1out, b=or2out, out=or3out);
+	Not(in=or3out, out=zr);
 }
