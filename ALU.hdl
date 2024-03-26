@@ -42,27 +42,32 @@ CHIP ALU {
         ng;
 
     PARTS:
+    // Zero and negate x as necessary
     Mux16(a=x,  b=false,  sel=zx, out=x1);    // if (zx == 1) set x = 0  
-    Not16(in=x1,out=notx1);
+    Not16(in=x1, out=notx1);
     Mux16(a=x1, b=notx1, sel=nx, out=x2);   // if (nx == 1) set x = !x
     
+    // Zero and negate y as necessary
     Mux16(a=y,  b=false,  sel=zy, out=y1);    // if (zy == 1) set y = 0
-    Not16(in=y1,out=noty1);
+    Not16(in=y1, out=noty1);
     Mux16(a=y1, b=noty1, sel=ny, out=y2);   // if (ny == 1) set y = !y
     
+    // Perform addition or bitwise AND as per the 'f' flag
     Add16(a=x2, b=y2, out=addxy);           // addxy = x + y
     And16(a=x2, b=y2, out=andxy);           // andxy = x & y
+    Mux16(a=andxy, b=addxy, sel=f, out=o1); // if (f == 1) set out = x + y else set out = x & y
     
-    Mux16(a=andxy, b=addxy, sel=f, out=o1); // if (f == 1)  set out = x + y else set out = x & y
+    // Optionally negate the output
     Not16(in=o1, out=noto1);
+    Mux16(a=o1, b=noto1, sel=no, out=out);  // if (no == 1) set out = !out
     
-    Mux16(a=o1, b=noto1, sel=no, out=o2, out=out, out[15]=ng);  // if (no == 1) set out = !out
+    // Set 'ng' based on the MSB of the output
+    Or8Way(in=out[8..15], out=orHigh);      // Check if any bit in the higher byte is 1
+    Not(in=out[15], out=notNg);             // 'ng' is the inverse of the MSB
+    Not(in=notNg, out=ng);                  // Correctly assign 'ng' based on the MSB
     
-    And16(a=o2, b=o2, out[0..7]=outLow, out[8..15]=outHigh); 
-    Or8Way(in=outLow, out=orLow);      // orLow = Or(out[0..7]);
-    Or8Way(in=outHigh, out=orHigh);    // orHigh = Or(out[8..15]);
-    Or(a=orLow, b=orHigh, out=notzr);  // nzr = Or(out[0..15]);
-    Not(in=notzr, out=zr);             // zr = !nzr
-    // And16(a=o2, b=o2, out[15]=ng);     // ng = out[15]
-    // And16(a=o2, b=o2, out=out);
+    // Set 'zr' if the output is zero
+    Or8Way(in=out[0..7], out=orLow);        // Check if any bit in the lower byte is 1
+    Or(a=orLow, b=orHigh, out=orResult);    // Combine results from both bytes
+    Not(in=orResult, out=zr);               // 'zr' is 1 if 'orResult' is 0, indicating all bits in 'out' are 0
 }
